@@ -1,0 +1,30 @@
+{
+  "name": "fisiosuite",
+  "version": "0.1.0",
+  "private": true,
+  "description": "SaaS de gestão para clínicas de fisioterapia — agenda, pacotes, prontuário e financeiro",
+  "workspaces": [
+    "apps/api",
+    "apps/web"
+  ],
+  "scripts": {
+    "dev:api": "npm run start:dev -w @fisiosuite/api",
+    "dev:web": "npm run dev -w @fisiosuite/web",
+    "build": "npm run build -w @fisiosuite/api && npm run build -w @fisiosuite/web",
+    "test": "npm run test -w @fisiosuite/api",
+    "db:up": "docker compose up -d postgres",
+    "db:migrate": "npm run prisma:migrate -w @fisiosuite/api",
+    "db:seed": "npm run seed -w @fisiosuite/api",
+    "db:studio": "npm run prisma:studio -w @fisiosuite/api"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "allowScripts": {
+    "@nestjs/core@10.4.22": true,
+    "@prisma/client@5.22.0": true,
+    "@prisma/engines@5.22.0": true,
+    "esbuild@0.21.5": true,
+    "prisma@5.22.0": true
+  }
+}

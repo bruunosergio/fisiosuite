@@ -1,0 +1,36 @@
+# Uso: docker compose -f docker-compose.prod.yml up -d --build
+# Acesse http://localhost:8080 (ou a URL do seu servidor)
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: fisiosuite
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-fisiosuite_prod_change_me}
+      POSTGRES_DB: fisiosuite
+    volumes:
+      - fisiosuite_prod_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fisiosuite -d fisiosuite"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "${PORT:-8080}:3001"
+    environment:
+      PORT: 3001
+      DATABASE_URL: postgresql://fisiosuite:${POSTGRES_PASSWORD:-fisiosuite_prod_change_me}@postgres:5432/fisiosuite?schema=public
+      JWT_SECRET: ${JWT_SECRET:-troque-este-segredo-longo-em-producao-fisiosuite}
+      JWT_EXPIRES_IN: 12h
+      CORS_ORIGIN: "*"
+      WHATSAPP_PROVIDER: stub
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  fisiosuite_prod_pg:

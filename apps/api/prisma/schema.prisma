@@ -1,0 +1,296 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  RECEPTION
+  PROFESSIONAL
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  CONFIRMED
+  COMPLETED
+  NO_SHOW
+  CANCELLED
+}
+
+enum PackageStatus {
+  ACTIVE
+  EXHAUSTED
+  EXPIRED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CASH
+  PIX
+  CARD
+  BOLETO
+  OTHER
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  PARTIAL
+  CANCELLED
+}
+
+enum AbsenceKind {
+  JUSTIFIED
+  UNJUSTIFIED
+  CLINIC_CANCELLED
+}
+
+/// Tenant = clínica
+model Clinic {
+  id                   String   @id @default(uuid())
+  name                 String
+  document             String?  // CNPJ opcional
+  phone                String?
+  timezone             String   @default("America/Sao_Paulo")
+  /// Horas mínimas de antecedência para falta justificada (reposição sem desconto)
+  absenceNoticeHours   Int      @default(24) @map("absence_notice_hours")
+  /// Falta justificada desconta sessão do pacote?
+  justifiedDebitsPackage Boolean @default(false) @map("justified_debits_package")
+  /// Falta não justificada desconta sessão?
+  unjustifiedDebitsPackage Boolean @default(true) @map("unjustified_debits_package")
+  /// Falta paga gera repasse ao profissional?
+  commissionOnNoShow   Boolean  @default(false) @map("commission_on_no_show")
+  /// Reposição gera segundo repasse?
+  commissionOnMakeup   Boolean  @default(false) @map("commission_on_makeup")
+  active               Boolean  @default(true)
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  users            User[]
+  rooms            Room[]
+  patients         Patient[]
+  packagePlans     PackagePlan[]
+  patientPackages  PatientPackage[]
+  appointments     Appointment[]
+  clinicalRecords  ClinicalRecord[]
+  payments         Payment[]
+  holidays         Holiday[]
+
+  @@map("clinics")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  clinicId     String   @map("clinic_id")
+  clinic       Clinic   @relation(fields: [clinicId], references: [id])
+  name         String
+  email        String
+  passwordHash String   @map("password_hash")
+  role         Role
+  /// Comissão padrão em % (0–100) para profissionais
+  commissionPct Decimal? @map("commission_pct") @db.Decimal(5, 2)
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  appointmentsAsProfessional Appointment[] @relation("AppointmentProfessional")
+  clinicalRecords            ClinicalRecord[]
+  sessionNotes               SessionNote[]
+
+  @@unique([clinicId, email])
+  @@map("users")
+}
+
+model Room {
+  id        String   @id @default(uuid())
+  clinicId  String   @map("clinic_id")
+  clinic    Clinic   @relation(fields: [clinicId], references: [id])
+  name      String
+  capacity  Int      @default(1)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  appointments Appointment[]
+
+  @@unique([clinicId, name])
+  @@map("rooms")
+}
+
+model Holiday {
+  id       String   @id @default(uuid())
+  clinicId String   @map("clinic_id")
+  clinic   Clinic   @relation(fields: [clinicId], references: [id])
+  date     DateTime @db.Date
+  name     String
+
+  @@unique([clinicId, date])
+  @@map("holidays")
+}
+
+model Patient {
+  id        String    @id @default(uuid())
+  clinicId  String    @map("clinic_id")
+  clinic    Clinic    @relation(fields: [clinicId], references: [id])
+  name      String
+  phone     String?
+  whatsapp  String?
+  email     String?
+  cpf       String?
+  birthDate DateTime? @map("birth_date") @db.Date
+  notes     String?
+  active    Boolean   @default(true)
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  packages        PatientPackage[]
+  appointments    Appointment[]
+  clinicalRecords ClinicalRecord[]
+  payments        Payment[]
+
+  @@index([clinicId, name])
+  @@map("patients")
+}
+
+/// Template comercial: "Pacote 10 sessões RPG"
+model PackagePlan {
+  id           String   @id @default(uuid())
+  clinicId     String   @map("clinic_id")
+  clinic       Clinic   @relation(fields: [clinicId], references: [id])
+  name         String
+  sessionCount Int      @map("session_count")
+  priceCents   Int      @map("price_cents")
+  validityDays Int?     @map("validity_days")
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  patientPackages PatientPackage[]
+
+  @@map("package_plans")
+}
+
+model PatientPackage {
+  id              String        @id @default(uuid())
+  clinicId        String        @map("clinic_id")
+  clinic          Clinic        @relation(fields: [clinicId], references: [id])
+  patientId       String        @map("patient_id")
+  patient         Patient       @relation(fields: [patientId], references: [id])
+  planId          String        @map("plan_id")
+  plan            PackagePlan   @relation(fields: [planId], references: [id])
+  totalSessions   Int           @map("total_sessions")
+  usedSessions    Int           @default(0) @map("used_sessions")
+  status          PackageStatus @default(ACTIVE)
+  purchasedAt     DateTime      @default(now()) @map("purchased_at")
+  expiresAt       DateTime?     @map("expires_at")
+  priceCents      Int           @map("price_cents")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  appointments Appointment[]
+  payments     Payment[]
+
+  @@index([clinicId, status])
+  @@map("patient_packages")
+}
+
+model Appointment {
+  id               String            @id @default(uuid())
+  clinicId         String            @map("clinic_id")
+  clinic           Clinic            @relation(fields: [clinicId], references: [id])
+  patientId        String            @map("patient_id")
+  patient          Patient           @relation(fields: [patientId], references: [id])
+  professionalId   String            @map("professional_id")
+  professional     User              @relation("AppointmentProfessional", fields: [professionalId], references: [id])
+  roomId           String?           @map("room_id")
+  room             Room?             @relation(fields: [roomId], references: [id])
+  packageId        String?           @map("package_id")
+  package          PatientPackage?   @relation(fields: [packageId], references: [id])
+  startsAt         DateTime          @map("starts_at")
+  endsAt           DateTime          @map("ends_at")
+  status           AppointmentStatus @default(SCHEDULED)
+  seriesId         String?           @map("series_id")
+  /// Se esta sessão é reposição de outra
+  makeupOfId       String?           @map("makeup_of_id")
+  makeupOf         Appointment?      @relation("Makeup", fields: [makeupOfId], references: [id])
+  makeups          Appointment[]     @relation("Makeup")
+  absenceKind      AbsenceKind?      @map("absence_kind")
+  absenceNotes     String?           @map("absence_notes")
+  /// Se a falta/presença já debitou o pacote
+  packageDebited   Boolean           @default(false) @map("package_debited")
+  confirmationSentAt DateTime?       @map("confirmation_sent_at")
+  confirmedAt      DateTime?         @map("confirmed_at")
+  createdAt        DateTime          @default(now()) @map("created_at")
+  updatedAt        DateTime          @updatedAt @map("updated_at")
+
+  sessionNote SessionNote?
+
+  @@index([clinicId, startsAt])
+  @@index([clinicId, professionalId, startsAt])
+  @@index([seriesId])
+  @@map("appointments")
+}
+
+model ClinicalRecord {
+  id             String   @id @default(uuid())
+  clinicId       String   @map("clinic_id")
+  clinic         Clinic   @relation(fields: [clinicId], references: [id])
+  patientId      String   @map("patient_id")
+  patient        Patient  @relation(fields: [patientId], references: [id])
+  professionalId String   @map("professional_id")
+  professional   User     @relation(fields: [professionalId], references: [id])
+  chiefComplaint String   @map("chief_complaint")
+  anamnesis      String?
+  painMap        Json?    @map("pain_map")
+  painScale      Int?     @map("pain_scale")
+  assessment     String?
+  plan           String?
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@index([clinicId, patientId])
+  @@map("clinical_records")
+}
+
+model SessionNote {
+  id             String      @id @default(uuid())
+  appointmentId  String      @unique @map("appointment_id")
+  appointment    Appointment @relation(fields: [appointmentId], references: [id])
+  professionalId String      @map("professional_id")
+  professional   User        @relation(fields: [professionalId], references: [id])
+  subjective     String?
+  objective      String?
+  assessment     String?
+  plan           String?
+  createdAt      DateTime    @default(now()) @map("created_at")
+  updatedAt      DateTime    @updatedAt @map("updated_at")
+
+  @@map("session_notes")
+}
+
+/// Cobrança / conta a receber (ou recebimento já quitado).
+/// PENDING = dívida do paciente; PAID = baixa; PARTIAL = pagamento parcial (resto em outra linha).
+model Payment {
+  id                 String        @id @default(uuid())
+  clinicId           String        @map("clinic_id")
+  clinic             Clinic        @relation(fields: [clinicId], references: [id])
+  patientId          String        @map("patient_id")
+  patient            Patient       @relation(fields: [patientId], references: [id])
+  packageId          String?       @map("package_id")
+  package            PatientPackage? @relation(fields: [packageId], references: [id])
+  amountCents        Int           @map("amount_cents")
+  method             PaymentMethod @default(PIX)
+  status             PaymentStatus @default(PENDING)
+  dueDate            DateTime?     @map("due_date") @db.Date
+  installmentNumber  Int?          @map("installment_number")
+  installmentTotal   Int?          @map("installment_total")
+  paidAt             DateTime?     @map("paid_at")
+  notes              String?
+  createdAt          DateTime      @default(now()) @map("created_at")
+
+  @@index([clinicId, status])
+  @@index([clinicId, dueDate])
+  @@map("payments")
+}

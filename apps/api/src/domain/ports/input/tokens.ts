@@ -1,0 +1,9 @@
+export const AUTH_USE_CASE = Symbol('AUTH_USE_CASE');
+export const PATIENT_USE_CASE = Symbol('PATIENT_USE_CASE');
+export const ROOM_USE_CASE = Symbol('ROOM_USE_CASE');
+export const PACKAGE_USE_CASE = Symbol('PACKAGE_USE_CASE');
+export const APPOINTMENT_USE_CASE = Symbol('APPOINTMENT_USE_CASE');
+export const CLINICAL_USE_CASE = Symbol('CLINICAL_USE_CASE');
+export const FINANCE_USE_CASE = Symbol('FINANCE_USE_CASE');
+export const ONBOARDING_USE_CASE = Symbol('ONBOARDING_USE_CASE');
+export const PLATFORM_USE_CASE = Symbol('PLATFORM_USE_CASE');
