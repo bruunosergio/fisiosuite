@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Shield } from 'lucide-react';
 import { usePlatformAuth } from '../../lib/platform-auth';
 import { consumePlatformSessionExpiredFlag, getApiErrorMessage } from '../../lib/api';
-import { Button, ErrorBanner, Field, Input } from '../../components/ui';
+import { Button, ErrorBanner, Input } from '../../components/ui';
 
 export default function PlatformLoginPage() {
   const { login } = usePlatformAuth();
@@ -54,7 +54,8 @@ export default function PlatformLoginPage() {
           )}
           {error && <ErrorBanner message={error} />}
 
-          <Field label="E-mail">
+          <div>
+            <label className="mb-1.5 block text-xs font-medium text-slate-300">E-mail</label>
             <Input
               type="email"
               required
@@ -62,11 +63,12 @@ export default function PlatformLoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="platform@fisiosuite.admin"
               autoComplete="username"
-              className="border-slate-700 bg-slate-950 text-white"
+              className="border-slate-600 bg-white text-slate-900 caret-slate-900 placeholder:text-slate-400"
             />
-          </Field>
+          </div>
 
-          <Field label="Senha">
+          <div>
+            <label className="mb-1.5 block text-xs font-medium text-slate-300">Senha</label>
             <Input
               type="password"
               required
@@ -74,9 +76,9 @@ export default function PlatformLoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
               autoComplete="current-password"
-              className="border-slate-700 bg-slate-950 text-white"
+              className="border-slate-600 bg-white text-slate-900 caret-slate-900 placeholder:text-slate-400"
             />
-          </Field>
+          </div>
 
           <Button type="submit" className="w-full" loading={loading}>
             Entrar na plataforma

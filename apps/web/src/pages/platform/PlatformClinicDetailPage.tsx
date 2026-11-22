@@ -120,7 +120,7 @@ export default function PlatformClinicDetailPage() {
                       setName(e.target.value);
                       setSaved(false);
                     }}
-                    className="border-slate-700 bg-slate-950 text-white"
+                    className="border-slate-600 bg-white text-slate-900 caret-slate-900"
                   />
                 </Field>
                 <Field label="Telefone">
@@ -130,7 +130,7 @@ export default function PlatformClinicDetailPage() {
                       setPhone(e.target.value);
                       setSaved(false);
                     }}
-                    className="border-slate-700 bg-slate-950 text-white"
+                    className="border-slate-600 bg-white text-slate-900 caret-slate-900"
                   />
                 </Field>
                 <Field label="CNPJ / documento">
@@ -140,7 +140,7 @@ export default function PlatformClinicDetailPage() {
                       setDocument(e.target.value);
                       setSaved(false);
                     }}
-                    className="border-slate-700 bg-slate-950 text-white"
+                    className="border-slate-600 bg-white text-slate-900 caret-slate-900"
                   />
                 </Field>
                 <Field label="Status" hint="Inativa mantém os dados, mas a clínica fica marcada como desligada.">
@@ -150,7 +150,7 @@ export default function PlatformClinicDetailPage() {
                       setActive(e.target.value === 'active');
                       setSaved(false);
                     }}
-                    className="border-slate-700 bg-slate-950 text-white"
+                    className="border-slate-600 bg-white text-slate-900"
                   >
                     <option value="active">Ativa</option>
                     <option value="inactive">Inativa</option>

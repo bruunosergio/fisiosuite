@@ -43,14 +43,14 @@ export default function PlatformClinicsPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar por nome, admin, telefone ou CNPJ"
-            className="border-slate-700 bg-slate-900 pl-9 text-white"
+            className="border-slate-600 bg-white pl-9 text-slate-900 caret-slate-900 placeholder:text-slate-400"
           />
         </div>
         <div className="w-full sm:w-44">
           <Select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
-            className="border-slate-700 bg-slate-900 text-white"
+            className="border-slate-600 bg-white text-slate-900"
           >
             <option value="all">Todas</option>
             <option value="active">Somente ativas</option>
