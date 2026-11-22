@@ -1,0 +1,23 @@
+# Evita o cold start do free tier do Render (dorme após ~15 min ocioso).
+# Não afeta o demo Railway. Ver docs/adr/0001-hospedagem-piloto-vercel-neon-render.md
+#
+# Configure o secret RENDER_API_URL (ex.: https://fisiosuite-api.onrender.com)
+# ou edite a URL abaixo após o primeiro deploy.
+name: keep-alive
+
+on:
+  schedule:
+    # UTC: 10–21 ≈ 07:00–18:50 Brasília, seg–sáb
+    - cron: '*/10 10-21 * * 1-6'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping API (Render)
+        env:
+          RENDER_API_URL: ${{ secrets.RENDER_API_URL }}
+        run: |
+          BASE="${RENDER_API_URL:-https://fisiosuite-api.onrender.com}"
+          curl -fsS --max-time 90 --retry 3 --retry-delay 10 "${BASE%/}/api/health"

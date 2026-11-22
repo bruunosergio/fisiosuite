@@ -1,0 +1,32 @@
+# Blueprint opcional — também pode configurar o Web Service manualmente no dashboard.
+# Root Directory: (raiz do monorepo). Não altera o demo Railway.
+services:
+  - type: web
+    name: fisiosuite-api
+    runtime: node
+    plan: free
+    region: oregon
+    buildCommand: npm ci && npm run prisma:generate -w @fisiosuite/api && npm run build -w @fisiosuite/api
+    startCommand: cd apps/api && npx prisma migrate deploy && node dist/main.js
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "3001"
+      - key: JWT_EXPIRES_IN
+        value: 12h
+      - key: WHATSAPP_PROVIDER
+        value: stub
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: CORS_ORIGIN
+        sync: false
+      - key: PLATFORM_ADMIN_EMAIL
+        sync: false
+      - key: PLATFORM_ADMIN_PASSWORD
+        sync: false
+      - key: PLATFORM_ADMIN_NAME
+        value: Admin Plataforma

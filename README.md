@@ -47,15 +47,20 @@ npm run dev:web
 - Credenciais via env: `PLATFORM_ADMIN_EMAIL` / `PLATFORM_ADMIN_PASSWORD` (ver `apps/api/.env.example`)
 - Local padrão: `platform@fisiosuite.admin` / `Platform@123`
 
-## Demo online para clientes
+## Hospedagem
 
-Veja o guia completo em [`docs/deploy.md`](docs/deploy.md).
+Guia completo: [`docs/deploy.md`](docs/deploy.md). ADR do piloto: [`docs/adr/0001-hospedagem-piloto-vercel-neon-render.md`](docs/adr/0001-hospedagem-piloto-vercel-neon-render.md).
 
-Resumo rápido (Docker em uma máquina/VPS):
+| Trilha | Stack | Uso |
+|--------|--------|-----|
+| **Demo** | Railway (Docker monólito) | Mostrar para clientes — já no ar |
+| **Piloto** | Vercel (web) + Render (API) + Neon (DB) | Mesmo padrão do meu-copiloto |
+
+Docker local/VPS:
 
 ```bash
 docker compose -f docker-compose.prod.yml up -d --build
-# http://localhost:8080  (ou IP/domínio do servidor)
+# http://localhost:8080
 ```
 
 
