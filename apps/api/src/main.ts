@@ -21,9 +21,10 @@ async function bootstrap() {
     }),
   );
 
-  const corsOrigin = config.get<string>('CORS_ORIGIN');
+  // Sanitize: Render/env UIs sometimes save quotes, spaces or CSV in CORS_ORIGIN.
+  const corsOrigin = parseCorsOrigin(config.get<string>('CORS_ORIGIN'));
   app.enableCors({
-    origin: corsOrigin === '*' ? true : corsOrigin,
+    origin: corsOrigin,
     credentials: true,
   });
 
@@ -55,3 +56,13 @@ async function bootstrap() {
 }
 
 bootstrap();
+
+function parseCorsOrigin(raw: string | undefined): boolean | string | string[] {
+  if (!raw?.trim()) return true;
+  const cleaned = raw
+    .split(',')
+    .map((part) => part.trim().replace(/^['"]+|['"]+$/g, ''))
+    .filter(Boolean);
+  if (cleaned.length === 0 || cleaned.includes('*')) return true;
+  return cleaned.length === 1 ? cleaned[0] : cleaned;
+}
