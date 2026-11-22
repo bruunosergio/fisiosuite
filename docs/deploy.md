@@ -40,6 +40,12 @@ Build Docker define `VITE_API_URL=/api` (mesmo domínio).
 
 Mesma stack do **meu-copiloto**. Banco **separado** do Railway.
 
+| Peça | URL |
+|------|-----|
+| Web | https://fisiosuite-web.vercel.app |
+| API | https://fisiosuite-api.onrender.com |
+| Health | https://fisiosuite-api.onrender.com/api/health |
+
 Ver ADR: [`docs/adr/0001-hospedagem-piloto-vercel-neon-render.md`](adr/0001-hospedagem-piloto-vercel-neon-render.md).
 
 ### 2.1 Neon (Postgres)
@@ -63,7 +69,7 @@ Blueprint: [`render.yaml`](../render.yaml) na raiz **ou** Web Service manual:
 |-------|--------|
 | Repo | `bruunosergio/fisiosuite` |
 | Root Directory | *(vazio — raiz do monorepo)* |
-| Build | `npm ci && npm run prisma:generate -w @fisiosuite/api && npm run build -w @fisiosuite/api` |
+| Build | `npm ci --include=dev && npm run prisma:generate -w @fisiosuite/api && npm run build -w @fisiosuite/api` |
 | Start | `cd apps/api && npx prisma migrate deploy && node dist/main.js` |
 | Health | `/api/health` |
 

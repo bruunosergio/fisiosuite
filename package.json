@@ -21,7 +21,7 @@
     "db:studio": "npm run prisma:studio -w @fisiosuite/api"
   },
   "engines": {
-    "node": ">=20"
+    "node": "20.x"
   },
   "allowScripts": {
     "@nestjs/core@10.4.22": true,

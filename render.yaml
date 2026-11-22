@@ -6,7 +6,7 @@ services:
     runtime: node
     plan: free
     region: oregon
-    buildCommand: npm ci && npm run prisma:generate -w @fisiosuite/api && npm run build -w @fisiosuite/api
+    buildCommand: npm ci --include=dev && npm run prisma:generate -w @fisiosuite/api && npm run build -w @fisiosuite/api
     startCommand: cd apps/api && npx prisma migrate deploy && node dist/main.js
     healthCheckPath: /api/health
     envVars:
