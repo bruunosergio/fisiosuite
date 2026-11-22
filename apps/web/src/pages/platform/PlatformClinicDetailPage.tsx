@@ -72,7 +72,10 @@ export default function PlatformClinicDetailPage() {
   return (
     <div>
       <div className="mb-4">
-        <Link to="/platform/clinics" className="inline-flex items-center gap-1 text-sm text-slate-400 hover:text-white">
+        <Link
+          to="/platform/clinics"
+          className="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-800"
+        >
           <ArrowLeft className="h-4 w-4" />
           Voltar para clínicas
         </Link>
@@ -87,8 +90,8 @@ export default function PlatformClinicDetailPage() {
       ) : (
         <>
           <div className="mb-6">
-            <h1 className="text-2xl font-semibold text-white">{clinic.name}</h1>
-            <p className="mt-1 text-sm text-slate-400">
+            <h1 className="text-2xl font-semibold text-slate-900">{clinic.name}</h1>
+            <p className="mt-1 text-sm text-slate-500">
               Admin: {clinic.adminEmail ?? '—'} · Criada em {formatDateTime(clinic.createdAt)}
             </p>
           </div>
@@ -100,15 +103,15 @@ export default function PlatformClinicDetailPage() {
           </div>
 
           <div className="grid gap-6 lg:grid-cols-2">
-            <Card className="border-slate-800 bg-slate-900">
-              <h2 className="mb-4 text-sm font-semibold text-slate-200">Dados da clínica</h2>
+            <Card>
+              <h2 className="mb-4 text-sm font-semibold text-slate-700">Dados da clínica</h2>
               {error && (
                 <div className="mb-3">
                   <ErrorBanner message={error} />
                 </div>
               )}
               {saved && (
-                <div className="mb-3 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-200">
+                <div className="mb-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
                   Alterações salvas.
                 </div>
               )}
@@ -120,7 +123,6 @@ export default function PlatformClinicDetailPage() {
                       setName(e.target.value);
                       setSaved(false);
                     }}
-                    className="border-slate-600 bg-white text-slate-900 caret-slate-900"
                   />
                 </Field>
                 <Field label="Telefone">
@@ -130,7 +132,6 @@ export default function PlatformClinicDetailPage() {
                       setPhone(e.target.value);
                       setSaved(false);
                     }}
-                    className="border-slate-600 bg-white text-slate-900 caret-slate-900"
                   />
                 </Field>
                 <Field label="CNPJ / documento">
@@ -140,7 +141,6 @@ export default function PlatformClinicDetailPage() {
                       setDocument(e.target.value);
                       setSaved(false);
                     }}
-                    className="border-slate-600 bg-white text-slate-900 caret-slate-900"
                   />
                 </Field>
                 <Field label="Status" hint="Inativa mantém os dados, mas a clínica fica marcada como desligada.">
@@ -150,7 +150,6 @@ export default function PlatformClinicDetailPage() {
                       setActive(e.target.value === 'active');
                       setSaved(false);
                     }}
-                    className="border-slate-600 bg-white text-slate-900"
                   >
                     <option value="active">Ativa</option>
                     <option value="inactive">Inativa</option>
@@ -164,9 +163,9 @@ export default function PlatformClinicDetailPage() {
               </div>
             </Card>
 
-            <Card padded={false} className="border-slate-800 bg-slate-900">
-              <div className="border-b border-slate-800 px-5 py-4">
-                <h2 className="text-sm font-semibold text-slate-200">Usuários da clínica</h2>
+            <Card padded={false}>
+              <div className="border-b border-slate-100 px-5 py-4">
+                <h2 className="text-sm font-semibold text-slate-700">Usuários da clínica</h2>
               </div>
               {clinic.users.length === 0 ? (
                 <div className="p-6">
@@ -175,20 +174,20 @@ export default function PlatformClinicDetailPage() {
               ) : (
                 <table className="w-full text-left text-sm">
                   <thead>
-                    <tr className="border-b border-slate-800 text-xs uppercase tracking-wide text-slate-500">
+                    <tr className="border-b border-slate-100 text-xs uppercase tracking-wide text-slate-400">
                       <th className="px-5 py-3 font-medium">Nome</th>
                       <th className="px-5 py-3 font-medium">Papel</th>
                       <th className="px-5 py-3 font-medium">Status</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-800">
+                  <tbody className="divide-y divide-slate-100">
                     {clinic.users.map((user) => (
-                      <tr key={user.id}>
+                      <tr key={user.id} className="hover:bg-slate-50">
                         <td className="px-5 py-3.5">
-                          <p className="font-medium text-white">{user.name}</p>
-                          <p className="text-xs text-slate-500">{user.email}</p>
+                          <p className="font-medium text-slate-800">{user.name}</p>
+                          <p className="text-xs text-slate-400">{user.email}</p>
                         </td>
-                        <td className="px-5 py-3.5 text-slate-400">{ROLE_LABELS[user.role] ?? user.role}</td>
+                        <td className="px-5 py-3.5 text-slate-600">{ROLE_LABELS[user.role] ?? user.role}</td>
                         <td className="px-5 py-3.5">
                           <Badge tone={user.active ? 'emerald' : 'slate'}>
                             {user.active ? 'Ativo' : 'Inativo'}
@@ -209,9 +208,9 @@ export default function PlatformClinicDetailPage() {
 
 function Metric({ label, value }: { label: string; value: number }) {
   return (
-    <Card className="border-slate-800 bg-slate-900">
+    <Card>
       <p className="text-xs text-slate-500">{label}</p>
-      <p className="mt-1 text-2xl font-semibold text-white">{value}</p>
+      <p className="mt-1 text-2xl font-semibold text-slate-900">{value}</p>
     </Card>
   );
 }
