@@ -1,4 +1,4 @@
-import { Role } from './enums';
+import { CouncilType, Role, Specialty } from './enums';
 
 export type User = {
   id: string;
@@ -8,6 +8,10 @@ export type User = {
   passwordHash: string;
   role: Role;
   commissionPct: number | null;
+  specialty: Specialty | null;
+  councilType: CouncilType | null;
+  councilNumber: string | null;
+  councilState: string | null;
   active: boolean;
   createdAt: Date;
   updatedAt: Date;

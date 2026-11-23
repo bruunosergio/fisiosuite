@@ -3,6 +3,7 @@ import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios';
 export const TOKEN_STORAGE_KEY = 'fisiosuite_token';
 export const USER_STORAGE_KEY = 'fisiosuite_user';
 export const SESSION_EXPIRED_KEY = 'fisiosuite_session_expired';
+export const ENABLED_MODULES_STORAGE_KEY = 'fisiosuite.enabledModules';
 
 export const PLATFORM_TOKEN_STORAGE_KEY = 'fisiosuite_platform_token';
 export const PLATFORM_USER_STORAGE_KEY = 'fisiosuite_platform_user';
@@ -46,6 +47,7 @@ export function registerPlatformUnauthorizedHandler(handler: UnauthorizedHandler
 export function clearStoredSession() {
   localStorage.removeItem(TOKEN_STORAGE_KEY);
   localStorage.removeItem(USER_STORAGE_KEY);
+  localStorage.removeItem(ENABLED_MODULES_STORAGE_KEY);
 }
 
 export function clearPlatformSession() {

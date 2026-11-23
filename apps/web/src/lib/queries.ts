@@ -16,11 +16,37 @@ import type {
   PlatformClinicDetail,
   PlatformClinicSummary,
   PlatformOverview,
+  PlantaoEncounter,
+  Precautions,
   Role,
   Room,
   SessionNote,
   SessionNoteHistoryItem,
+  ShiftDetail,
   User,
+  AdmissionDetail,
+  CensusItemDetail,
+  CensusItemStatus,
+  CensusPriority,
+  DischargeDestination,
+  Handoff,
+  HospitalBed,
+  HospitalSite,
+  AnthropometricAssessment,
+  BiologicalSex,
+  CreateMealPlanPayload,
+  EnergyCalculation,
+  EnergyFormula,
+  FoodItem,
+  GoalStatus,
+  MealPlan,
+  MealPlanDetail,
+  MealPlanStatus,
+  NutritionAnamnesis,
+  NutritionEvolution,
+  NutritionEvolutionFormat,
+  PatientGoal,
+  Specialty,
 } from './types';
 
 // ---------- Auth ----------
@@ -35,6 +61,7 @@ export async function registerClinicRequest(payload: {
   adminEmail: string;
   adminPassword: string;
   phone?: string;
+  enabledModules?: Specialty[];
 }) {
   const { data } = await api.post<AuthResponse>('/auth/register-clinic', payload);
   return data;
@@ -332,5 +359,309 @@ export async function settlePayment(payload: {
 
 export async function fetchCommissionReport(params: { professionalId: string; from: string; to: string }) {
   const { data } = await api.get<CommissionReport>('/finance/commission', { params });
+  return data;
+}
+
+// ---------- Plantão ----------
+export async function fetchHospitals() {
+  const { data } = await api.get<HospitalSite[]>('/plantao/hospitals');
+  return data;
+}
+
+export async function createHospital(payload: { name: string; city?: string }) {
+  const { data } = await api.post('/plantao/hospitals', payload);
+  return data;
+}
+
+export async function createWard(payload: { hospitalSiteId: string; name: string }) {
+  const { data } = await api.post('/plantao/wards', payload);
+  return data;
+}
+
+export async function createBed(payload: { wardId: string; code: string }) {
+  const { data } = await api.post('/plantao/beds', payload);
+  return data;
+}
+
+export async function fetchFreeBeds(hospitalSiteId: string, wardId?: string) {
+  const { data } = await api.get<HospitalBed[]>('/plantao/beds/free', {
+    params: { hospitalSiteId, wardId },
+  });
+  return data;
+}
+
+export async function fetchAdmissions(params?: {
+  hospitalSiteId?: string;
+  status?: 'ACTIVE' | 'DISCHARGED';
+}) {
+  const { data } = await api.get<AdmissionDetail[]>('/plantao/admissions', { params });
+  return data;
+}
+
+export async function fetchAdmission(id: string) {
+  const { data } = await api.get<AdmissionDetail>(`/plantao/admissions/${id}`);
+  return data;
+}
+
+export async function admitPatient(payload: {
+  patientId: string;
+  hospitalSiteId: string;
+  bedId: string;
+  hospitalMrn?: string;
+  insuranceName?: string;
+  reason?: string;
+  diagnosis?: string;
+  responsiblePhysician?: string;
+  precautions?: Precautions;
+  mobilityLevel?: string;
+  assistanceNeeded?: string;
+  initialGoals?: string;
+}) {
+  const { data } = await api.post<AdmissionDetail>('/plantao/admissions', payload);
+  return data;
+}
+
+export async function updateAdmission(
+  id: string,
+  payload: Partial<{
+    hospitalMrn: string | null;
+    insuranceName: string | null;
+    reason: string | null;
+    diagnosis: string | null;
+    responsiblePhysician: string | null;
+    precautions: Precautions | null;
+    mobilityLevel: string | null;
+    assistanceNeeded: string | null;
+    initialGoals: string | null;
+    openPending: string | null;
+  }>,
+) {
+  const { data } = await api.patch<AdmissionDetail>(`/plantao/admissions/${id}`, payload);
+  return data;
+}
+
+export async function transferAdmission(id: string, bedId: string) {
+  const { data } = await api.post<AdmissionDetail>(`/plantao/admissions/${id}/transfer`, { bedId });
+  return data;
+}
+
+export async function dischargeAdmission(
+  id: string,
+  payload: { dischargeDestination: DischargeDestination; dischargeSummary?: string },
+) {
+  const { data } = await api.post<AdmissionDetail>(`/plantao/admissions/${id}/discharge`, payload);
+  return data;
+}
+
+export async function fetchAdmissionEncounters(admissionId: string) {
+  const { data } = await api.get<PlantaoEncounter[]>(`/plantao/admissions/${admissionId}/encounters`);
+  return data;
+}
+
+export async function fetchOpenShift(hospitalSiteId?: string) {
+  const { data } = await api.get<ShiftDetail | null>('/plantao/shifts/open', {
+    params: hospitalSiteId ? { hospitalSiteId } : undefined,
+  });
+  return data;
+}
+
+export async function fetchShift(id: string) {
+  const { data } = await api.get<ShiftDetail>(`/plantao/shifts/${id}`);
+  return data;
+}
+
+export async function openShift(payload: {
+  hospitalSiteId: string;
+  startsAt: string;
+  endsAt: string;
+  wardIds?: string[];
+  teamUserIds?: string[];
+  notes?: string;
+}) {
+  const { data } = await api.post<ShiftDetail>('/plantao/shifts', payload);
+  return data;
+}
+
+export async function updateCensusItem(
+  id: string,
+  payload: { priority?: CensusPriority; status?: CensusItemStatus; notes?: string | null },
+) {
+  const { data } = await api.patch<CensusItemDetail>(`/plantao/census/${id}`, payload);
+  return data;
+}
+
+export async function createPlantaoEncounter(payload: {
+  shiftId: string;
+  admissionId: string;
+  conduct: string;
+  tags?: string[];
+  response?: string;
+  intercurrence?: string;
+  painScale?: number;
+  dyspneaScale?: number;
+  mobilityAssist?: string;
+  precautionsUpdate?: Precautions;
+  pendingForNext?: string;
+  markCensusDone?: boolean;
+}) {
+  const { data } = await api.post<PlantaoEncounter>('/plantao/encounters', payload);
+  return data;
+}
+
+export async function closeShiftHandoff(
+  shiftId: string,
+  payload: { toUserId?: string; notes?: string },
+) {
+  const { data } = await api.post<Handoff>(`/plantao/shifts/${shiftId}/handoff`, payload);
+  return data;
+}
+
+// ---------- Nutrição ----------
+export async function fetchNutritionAnamneses(patientId: string) {
+  const { data } = await api.get<NutritionAnamnesis[]>('/nutrition/anamneses', { params: { patientId } });
+  return data;
+}
+
+export async function createNutritionAnamnesis(payload: {
+  patientId: string;
+  responses: Record<string, unknown>;
+  recordedAt?: string;
+}) {
+  const { data } = await api.post<NutritionAnamnesis>('/nutrition/anamneses', payload);
+  return data;
+}
+
+export async function fetchAnthropometry(patientId: string) {
+  const { data } = await api.get<AnthropometricAssessment[]>('/nutrition/anthropometry', {
+    params: { patientId },
+  });
+  return data;
+}
+
+export async function createAnthropometry(payload: {
+  patientId: string;
+  measuredAt?: string;
+  weightKg: number;
+  heightCm: number;
+  circumferences?: Record<string, unknown>;
+  skinfolds?: Record<string, unknown>;
+  bodyFatProtocol?: string;
+  bodyFatPct?: number;
+  leanMassKg?: number;
+  fatMassKg?: number;
+  bioimpedance?: Record<string, unknown>;
+  notes?: string;
+}) {
+  const { data } = await api.post<AnthropometricAssessment>('/nutrition/anthropometry', payload);
+  return data;
+}
+
+export async function fetchEnergyCalculations(patientId: string) {
+  const { data } = await api.get<EnergyCalculation[]>('/nutrition/energy', { params: { patientId } });
+  return data;
+}
+
+export async function createEnergyCalculation(payload: {
+  patientId: string;
+  assessmentId?: string;
+  formula: EnergyFormula;
+  activityFactor: number;
+  weightKg?: number;
+  heightCm?: number;
+  sex?: BiologicalSex;
+  customBmrKcal?: number;
+  targetKcal?: number;
+  kcalAdjustment?: number;
+  carbPct: number;
+  proteinPct: number;
+  fatPct: number;
+  proteinGPerKg?: number;
+  notes?: string;
+}) {
+  const { data } = await api.post<EnergyCalculation>('/nutrition/energy', payload);
+  return data;
+}
+
+export async function searchFoods(q: string, limit = 15) {
+  const { data } = await api.get<FoodItem[]>('/nutrition/foods', { params: { q, limit } });
+  return data;
+}
+
+export async function createCustomFood(payload: {
+  name: string;
+  category?: string;
+  kcalPer100g: number;
+  carbsPer100g: number;
+  proteinPer100g: number;
+  fatPer100g: number;
+  fiberPer100g?: number;
+  measures?: { label: string; grams: number }[];
+}) {
+  const { data } = await api.post<FoodItem>('/nutrition/foods', payload);
+  return data;
+}
+
+export async function fetchMealPlans(params?: { patientId?: string; status?: MealPlanStatus }) {
+  const { data } = await api.get<MealPlan[]>('/nutrition/meal-plans', { params });
+  return data;
+}
+
+export async function fetchMealPlan(id: string) {
+  const { data } = await api.get<MealPlanDetail>(`/nutrition/meal-plans/${id}`);
+  return data;
+}
+
+export async function createMealPlan(payload: CreateMealPlanPayload) {
+  const { data } = await api.post<MealPlanDetail>('/nutrition/meal-plans', payload);
+  return data;
+}
+
+export async function activateMealPlan(id: string) {
+  const { data } = await api.post<MealPlanDetail>(`/nutrition/meal-plans/${id}/activate`);
+  return data;
+}
+
+export async function cloneMealPlan(id: string, payload: { title?: string; patientId?: string } = {}) {
+  const { data } = await api.post<MealPlanDetail>(`/nutrition/meal-plans/${id}/clone`, payload);
+  return data;
+}
+
+export async function recalcMealPlan(id: string) {
+  const { data } = await api.post<MealPlanDetail>(`/nutrition/meal-plans/${id}/recalc`);
+  return data;
+}
+
+export async function fetchNutritionEvolutions(patientId: string) {
+  const { data } = await api.get<NutritionEvolution[]>('/nutrition/evolutions', { params: { patientId } });
+  return data;
+}
+
+export async function createNutritionEvolution(payload: {
+  patientId: string;
+  format?: NutritionEvolutionFormat;
+  assessment?: string;
+  nutritionDiagnosis?: string;
+  intervention?: string;
+  monitoringEvaluation?: string;
+}) {
+  const { data } = await api.post<NutritionEvolution>('/nutrition/evolutions', payload);
+  return data;
+}
+
+export async function fetchGoals(patientId: string) {
+  const { data } = await api.get<PatientGoal[]>('/nutrition/goals', { params: { patientId } });
+  return data;
+}
+
+export async function createGoal(payload: {
+  patientId: string;
+  title: string;
+  metricType: string;
+  targetValue?: string;
+  currentValue?: string;
+  dueDate?: string;
+  status?: GoalStatus;
+}) {
+  const { data } = await api.post<PatientGoal>('/nutrition/goals', payload);
   return data;
 }

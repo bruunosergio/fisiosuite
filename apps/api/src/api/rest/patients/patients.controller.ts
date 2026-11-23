@@ -11,8 +11,16 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { IsBoolean, IsDateString, IsOptional, IsString, MinLength } from 'class-validator';
+import {
+  IsBoolean,
+  IsDateString,
+  IsEnum,
+  IsOptional,
+  IsString,
+  MinLength,
+} from 'class-validator';
 import { PATIENT_USE_CASE, type PatientUseCase } from '../../../domain/ports/input';
+import { BiologicalSex } from '../../../domain/entities';
 import { httpStatusFor } from '../failure-http.mapper';
 import { AuthenticatedRequest, JwtAuthGuard } from '../../guards/jwt-auth.guard';
 
@@ -40,6 +48,18 @@ class UpsertPatientDto {
   @IsOptional()
   @IsDateString()
   birthDate?: string;
+
+  @IsOptional()
+  @IsEnum(BiologicalSex)
+  biologicalSex?: BiologicalSex;
+
+  @IsOptional()
+  @IsString()
+  allergiesSummary?: string;
+
+  @IsOptional()
+  @IsString()
+  dietaryRestrictions?: string;
 
   @IsOptional()
   @IsString()
@@ -85,6 +105,9 @@ export class PatientsController {
       email: body.email,
       cpf: body.cpf,
       birthDate: body.birthDate ? new Date(body.birthDate) : null,
+      biologicalSex: body.biologicalSex,
+      allergiesSummary: body.allergiesSummary,
+      dietaryRestrictions: body.dietaryRestrictions,
       notes: body.notes,
     });
     if (result.isErr) {
@@ -108,6 +131,9 @@ export class PatientsController {
       email: body.email,
       cpf: body.cpf,
       birthDate: body.birthDate ? new Date(body.birthDate) : null,
+      biologicalSex: body.biologicalSex,
+      allergiesSummary: body.allergiesSummary,
+      dietaryRestrictions: body.dietaryRestrictions,
       notes: body.notes,
       active: body.active,
     });

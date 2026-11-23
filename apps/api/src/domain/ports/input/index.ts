@@ -7,3 +7,5 @@ export * from './clinical.use-case';
 export * from './finance.use-case';
 export * from './room.use-case';
 export * from './platform.use-case';
+export * from './plantao.use-case';
+export * from './nutrition.use-case';

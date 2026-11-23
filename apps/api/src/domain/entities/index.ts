@@ -7,3 +7,5 @@ export * from './package';
 export * from './appointment';
 export * from './clinical';
 export * from './payment';
+export * from './plantao';
+export * from './nutrition';

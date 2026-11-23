@@ -7,3 +7,5 @@ export const CLINICAL_USE_CASE = Symbol('CLINICAL_USE_CASE');
 export const FINANCE_USE_CASE = Symbol('FINANCE_USE_CASE');
 export const ONBOARDING_USE_CASE = Symbol('ONBOARDING_USE_CASE');
 export const PLATFORM_USE_CASE = Symbol('PLATFORM_USE_CASE');
+export const PLANTAO_USE_CASE = Symbol('PLANTAO_USE_CASE');
+export const NUTRITION_USE_CASE = Symbol('NUTRITION_USE_CASE');

@@ -49,6 +49,92 @@ enum AbsenceKind {
   CLINIC_CANCELLED
 }
 
+enum BedStatus {
+  FREE
+  OCCUPIED
+  BLOCKED
+}
+
+enum AdmissionStatus {
+  ACTIVE
+  DISCHARGED
+}
+
+enum DischargeDestination {
+  HOME
+  TRANSFER
+  DEATH
+  OTHER_WARD
+  OTHER
+}
+
+enum ShiftStatus {
+  OPEN
+  HANDOFF
+  CLOSED
+}
+
+enum CensusPriority {
+  CRITICAL
+  WATCH
+  STABLE
+}
+
+enum CensusItemStatus {
+  PENDING
+  IN_PROGRESS
+  DONE
+  CONTRAINDICATED
+  DISCHARGED_TODAY
+}
+
+enum Specialty {
+  FISIOTERAPIA
+  NUTRICAO
+}
+
+enum CouncilType {
+  CREFITO
+  CRN
+  OTHER
+}
+
+enum BiologicalSex {
+  FEMALE
+  MALE
+  UNSPECIFIED
+}
+
+enum FoodSource {
+  TACO
+  TBCA
+  CUSTOM
+}
+
+enum MealPlanMode {
+  QUANTITATIVE
+  EQUIVALENTS
+  QUALITATIVE
+}
+
+enum MealPlanStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+enum EnergyFormula {
+  MIFFLIN
+  HARRIS_BENEDICT
+  FAO_WHO
+  CUSTOM
+}
+
+enum NutritionEvolutionFormat {
+  ADIME
+  SOAP
+}
+
 /// Tenant = clínica
 model Clinic {
   id                   String   @id @default(uuid())
@@ -66,6 +152,8 @@ model Clinic {
   commissionOnNoShow   Boolean  @default(false) @map("commission_on_no_show")
   /// Reposição gera segundo repasse?
   commissionOnMakeup   Boolean  @default(false) @map("commission_on_makeup")
+  /// Módulos de especialidade habilitados nesta clínica
+  enabledModules       Specialty[] @default([FISIOTERAPIA]) @map("enabled_modules")
   active               Boolean  @default(true)
   createdAt            DateTime @default(now()) @map("created_at")
   updatedAt            DateTime @updatedAt @map("updated_at")
@@ -79,6 +167,16 @@ model Clinic {
   clinicalRecords  ClinicalRecord[]
   payments         Payment[]
   holidays         Holiday[]
+  hospitalSites    HospitalSite[]
+  admissions       Admission[]
+  shifts           Shift[]
+  foodItems        FoodItem[]
+  nutritionAnamneses NutritionAnamnesis[]
+  anthropometricAssessments AnthropometricAssessment[]
+  energyCalculations EnergyCalculation[]
+  mealPlans        MealPlan[]
+  nutritionEvolutions NutritionEvolution[]
+  patientGoals     PatientGoal[]
 
   @@map("clinics")
 }
@@ -91,6 +189,10 @@ model User {
   email        String
   passwordHash String   @map("password_hash")
   role         Role
+  specialty    Specialty? @map("specialty")
+  councilType  CouncilType? @map("council_type")
+  councilNumber String? @map("council_number")
+  councilState String?  @map("council_state") @db.Char(2)
   /// Comissão padrão em % (0–100) para profissionais
   commissionPct Decimal? @map("commission_pct") @db.Decimal(5, 2)
   active       Boolean  @default(true)
@@ -100,6 +202,17 @@ model User {
   appointmentsAsProfessional Appointment[] @relation("AppointmentProfessional")
   clinicalRecords            ClinicalRecord[]
   sessionNotes               SessionNote[]
+  shiftAssignments           ShiftAssignment[]
+  plantaoEncounters          PlantaoEncounter[]
+  handoffsGiven              Handoff[]         @relation("HandoffFrom")
+  handoffsReceived           Handoff[]         @relation("HandoffTo")
+  shiftsOpened               Shift[]           @relation("ShiftOpenedBy")
+  nutritionAnamneses         NutritionAnamnesis[]
+  anthropometricAssessments  AnthropometricAssessment[]
+  energyCalculations         EnergyCalculation[]
+  mealPlans                  MealPlan[]
+  nutritionEvolutions        NutritionEvolution[]
+  patientGoals               PatientGoal[]
 
   @@unique([clinicId, email])
   @@map("users")
@@ -141,6 +254,9 @@ model Patient {
   email     String?
   cpf       String?
   birthDate DateTime? @map("birth_date") @db.Date
+  biologicalSex BiologicalSex? @map("biological_sex")
+  allergiesSummary String? @map("allergies_summary")
+  dietaryRestrictions String? @map("dietary_restrictions")
   notes     String?
   active    Boolean   @default(true)
   createdAt DateTime  @default(now()) @map("created_at")
@@ -150,6 +266,13 @@ model Patient {
   appointments    Appointment[]
   clinicalRecords ClinicalRecord[]
   payments        Payment[]
+  admissions      Admission[]
+  nutritionAnamneses NutritionAnamnesis[]
+  anthropometricAssessments AnthropometricAssessment[]
+  energyCalculations EnergyCalculation[]
+  mealPlans        MealPlan[]
+  nutritionEvolutions NutritionEvolution[]
+  patientGoals     PatientGoal[]
 
   @@index([clinicId, name])
   @@map("patients")
@@ -293,4 +416,412 @@ model Payment {
   @@index([clinicId, status])
   @@index([clinicId, dueDate])
   @@map("payments")
+}
+
+/// Hospital onde a clínica cobre plantão
+model HospitalSite {
+  id        String   @id @default(uuid())
+  clinicId  String   @map("clinic_id")
+  clinic    Clinic   @relation(fields: [clinicId], references: [id])
+  name      String
+  city      String?
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  wards      Ward[]
+  admissions Admission[]
+  shifts     Shift[]
+
+  @@unique([clinicId, name])
+  @@map("hospital_sites")
+}
+
+model Ward {
+  id             String       @id @default(uuid())
+  hospitalSiteId String       @map("hospital_site_id")
+  hospitalSite   HospitalSite @relation(fields: [hospitalSiteId], references: [id])
+  name           String
+  active         Boolean      @default(true)
+  createdAt      DateTime     @default(now()) @map("created_at")
+
+  beds Bed[]
+
+  @@unique([hospitalSiteId, name])
+  @@map("wards")
+}
+
+model Bed {
+  id        String    @id @default(uuid())
+  wardId    String    @map("ward_id")
+  ward      Ward      @relation(fields: [wardId], references: [id])
+  code      String
+  status    BedStatus @default(FREE)
+  active    Boolean   @default(true)
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  admissions Admission[]
+
+  @@unique([wardId, code])
+  @@map("beds")
+}
+
+model Admission {
+  id                   String               @id @default(uuid())
+  clinicId             String               @map("clinic_id")
+  clinic               Clinic               @relation(fields: [clinicId], references: [id])
+  patientId            String               @map("patient_id")
+  patient              Patient              @relation(fields: [patientId], references: [id])
+  hospitalSiteId       String               @map("hospital_site_id")
+  hospitalSite         HospitalSite         @relation(fields: [hospitalSiteId], references: [id])
+  bedId                String               @map("bed_id")
+  bed                  Bed                  @relation(fields: [bedId], references: [id])
+  hospitalMrn          String?              @map("hospital_mrn")
+  insuranceName        String?              @map("insurance_name")
+  admittedAt           DateTime             @map("admitted_at")
+  reason               String?
+  diagnosis            String?
+  responsiblePhysician String?              @map("responsible_physician")
+  expectedDischargeAt  DateTime?            @map("expected_discharge_at")
+  /// Checklist vivo: isolamento, O2, VM, etc.
+  precautions          Json?
+  mobilityLevel        String?              @map("mobility_level")
+  assistanceNeeded     String?              @map("assistance_needed")
+  initialGoals         String?              @map("initial_goals")
+  openPending          String?              @map("open_pending")
+  status               AdmissionStatus      @default(ACTIVE)
+  dischargedAt         DateTime?            @map("discharged_at")
+  dischargeDestination DischargeDestination? @map("discharge_destination")
+  dischargeSummary     String?              @map("discharge_summary")
+  createdAt            DateTime             @default(now()) @map("created_at")
+  updatedAt            DateTime             @updatedAt @map("updated_at")
+
+  censusItems CensusItem[]
+  encounters  PlantaoEncounter[]
+
+  @@index([clinicId, status])
+  @@index([clinicId, hospitalSiteId, status])
+  @@map("admissions")
+}
+
+model Shift {
+  id             String       @id @default(uuid())
+  clinicId       String       @map("clinic_id")
+  clinic         Clinic       @relation(fields: [clinicId], references: [id])
+  hospitalSiteId String       @map("hospital_site_id")
+  hospitalSite   HospitalSite @relation(fields: [hospitalSiteId], references: [id])
+  openedById     String       @map("opened_by_id")
+  openedBy       User         @relation("ShiftOpenedBy", fields: [openedById], references: [id])
+  startsAt       DateTime     @map("starts_at")
+  endsAt         DateTime     @map("ends_at")
+  /// IDs dos setores cobertos (vazio = todos do hospital)
+  wardIds        String[]     @default([]) @map("ward_ids")
+  status         ShiftStatus  @default(OPEN)
+  notes          String?
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+
+  assignments ShiftAssignment[]
+  censusItems CensusItem[]
+  encounters  PlantaoEncounter[]
+  handoff     Handoff?
+
+  @@index([clinicId, status])
+  @@index([clinicId, hospitalSiteId, startsAt])
+  @@map("shifts")
+}
+
+model ShiftAssignment {
+  id       String @id @default(uuid())
+  shiftId  String @map("shift_id")
+  shift    Shift  @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+  userId   String @map("user_id")
+  user     User   @relation(fields: [userId], references: [id])
+
+  @@unique([shiftId, userId])
+  @@map("shift_assignments")
+}
+
+model CensusItem {
+  id          String           @id @default(uuid())
+  shiftId     String           @map("shift_id")
+  shift       Shift            @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+  admissionId String           @map("admission_id")
+  admission   Admission        @relation(fields: [admissionId], references: [id])
+  priority    CensusPriority   @default(STABLE)
+  status      CensusItemStatus @default(PENDING)
+  notes       String?
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+
+  @@unique([shiftId, admissionId])
+  @@index([shiftId, status])
+  @@map("census_items")
+}
+
+model PlantaoEncounter {
+  id               String   @id @default(uuid())
+  clinicId         String   @map("clinic_id")
+  shiftId          String   @map("shift_id")
+  shift            Shift    @relation(fields: [shiftId], references: [id])
+  admissionId      String   @map("admission_id")
+  admission        Admission @relation(fields: [admissionId], references: [id])
+  professionalId   String   @map("professional_id")
+  professional     User     @relation(fields: [professionalId], references: [id])
+  conductedAt      DateTime @default(now()) @map("conducted_at")
+  conduct          String
+  /// Tags: mobilizacao, higiene_bronquica, exercicios, orientacao, etc.
+  tags             String[] @default([])
+  response         String?
+  intercurrence    String?
+  painScale        Int?     @map("pain_scale")
+  dyspneaScale     Int?     @map("dyspnea_scale")
+  mobilityAssist   String?  @map("mobility_assist")
+  precautionsUpdate Json?   @map("precautions_update")
+  pendingForNext   String?  @map("pending_for_next")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  @@index([clinicId, admissionId, conductedAt])
+  @@index([shiftId, conductedAt])
+  @@map("plantao_encounters")
+}
+
+model Handoff {
+  id              String   @id @default(uuid())
+  shiftId         String   @unique @map("shift_id")
+  shift           Shift    @relation(fields: [shiftId], references: [id])
+  fromUserId      String   @map("from_user_id")
+  fromUser        User     @relation("HandoffFrom", fields: [fromUserId], references: [id])
+  toUserId        String?  @map("to_user_id")
+  toUser          User?    @relation("HandoffTo", fields: [toUserId], references: [id])
+  /// Resumo: contagens + pendências por admissão
+  summary         Json
+  notes           String?
+  confirmedAt     DateTime @default(now()) @map("confirmed_at")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@map("handoffs")
+}
+
+// ---------- Nutrição ----------
+
+model NutritionAnamnesis {
+  id             String   @id @default(uuid())
+  clinicId       String   @map("clinic_id")
+  clinic         Clinic   @relation(fields: [clinicId], references: [id])
+  patientId      String   @map("patient_id")
+  patient        Patient  @relation(fields: [patientId], references: [id])
+  professionalId String   @map("professional_id")
+  professional   User     @relation(fields: [professionalId], references: [id])
+  responses      Json
+  recordedAt     DateTime @default(now()) @map("recorded_at")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@index([clinicId, patientId, recordedAt])
+  @@map("nutrition_anamneses")
+}
+
+model AnthropometricAssessment {
+  id             String   @id @default(uuid())
+  clinicId       String   @map("clinic_id")
+  clinic         Clinic   @relation(fields: [clinicId], references: [id])
+  patientId      String   @map("patient_id")
+  patient        Patient  @relation(fields: [patientId], references: [id])
+  professionalId String   @map("professional_id")
+  professional   User     @relation(fields: [professionalId], references: [id])
+  measuredAt     DateTime @map("measured_at")
+  weightKg       Decimal  @map("weight_kg") @db.Decimal(6, 2)
+  heightCm       Decimal  @map("height_cm") @db.Decimal(5, 2)
+  bmi            Decimal? @db.Decimal(5, 2)
+  circumferences Json?
+  skinfolds      Json?
+  bodyFatProtocol String? @map("body_fat_protocol")
+  bodyFatPct     Decimal? @map("body_fat_pct") @db.Decimal(5, 2)
+  leanMassKg     Decimal? @map("lean_mass_kg") @db.Decimal(6, 2)
+  fatMassKg      Decimal? @map("fat_mass_kg") @db.Decimal(6, 2)
+  bioimpedance   Json?
+  notes          String?
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  energyCalculations EnergyCalculation[]
+
+  @@index([clinicId, patientId, measuredAt])
+  @@map("anthropometric_assessments")
+}
+
+model EnergyCalculation {
+  id             String        @id @default(uuid())
+  clinicId       String        @map("clinic_id")
+  clinic         Clinic        @relation(fields: [clinicId], references: [id])
+  patientId      String        @map("patient_id")
+  patient        Patient       @relation(fields: [patientId], references: [id])
+  professionalId String        @map("professional_id")
+  professional   User          @relation(fields: [professionalId], references: [id])
+  assessmentId   String?       @map("assessment_id")
+  assessment     AnthropometricAssessment? @relation(fields: [assessmentId], references: [id])
+  formula        EnergyFormula
+  activityFactor Decimal       @map("activity_factor") @db.Decimal(4, 2)
+  bmrKcal        Int           @map("bmr_kcal")
+  tdeeKcal       Int           @map("tdee_kcal")
+  targetKcal     Int           @map("target_kcal")
+  carbPct        Decimal       @map("carb_pct") @db.Decimal(5, 2)
+  proteinPct     Decimal       @map("protein_pct") @db.Decimal(5, 2)
+  fatPct         Decimal       @map("fat_pct") @db.Decimal(5, 2)
+  proteinGPerKg  Decimal?      @map("protein_g_per_kg") @db.Decimal(4, 2)
+  notes          String?
+  createdAt      DateTime      @default(now()) @map("created_at")
+
+  @@index([clinicId, patientId, createdAt])
+  @@map("energy_calculations")
+}
+
+model FoodItem {
+  id              String     @id @default(uuid())
+  clinicId        String?    @map("clinic_id")
+  clinic          Clinic?    @relation(fields: [clinicId], references: [id])
+  source          FoodSource
+  sourceCode      String?    @map("source_code")
+  name            String
+  category        String?
+  kcalPer100g     Decimal    @map("kcal_per_100g") @db.Decimal(8, 2)
+  carbsPer100g    Decimal    @map("carbs_per_100g") @db.Decimal(8, 2)
+  proteinPer100g  Decimal    @map("protein_per_100g") @db.Decimal(8, 2)
+  fatPer100g      Decimal    @map("fat_per_100g") @db.Decimal(8, 2)
+  fiberPer100g    Decimal?   @map("fiber_per_100g") @db.Decimal(8, 2)
+  active          Boolean    @default(true)
+  createdAt       DateTime   @default(now()) @map("created_at")
+
+  measures      FoodMeasure[]
+  mealItems     MealItem[]
+  substitutions MealSubstitution[]
+
+  @@index([name])
+  @@index([clinicId, name])
+  @@index([source, sourceCode])
+  @@map("food_items")
+}
+
+model FoodMeasure {
+  id         String   @id @default(uuid())
+  foodItemId String   @map("food_item_id")
+  foodItem   FoodItem @relation(fields: [foodItemId], references: [id], onDelete: Cascade)
+  label      String
+  grams      Decimal  @db.Decimal(8, 2)
+
+  @@unique([foodItemId, label])
+  @@map("food_measures")
+}
+
+model MealPlan {
+  id               String         @id @default(uuid())
+  clinicId         String         @map("clinic_id")
+  clinic           Clinic         @relation(fields: [clinicId], references: [id])
+  patientId        String         @map("patient_id")
+  patient          Patient        @relation(fields: [patientId], references: [id])
+  professionalId   String         @map("professional_id")
+  professional     User           @relation(fields: [professionalId], references: [id])
+  title            String
+  objective        String?
+  mode             MealPlanMode   @default(QUANTITATIVE)
+  status           MealPlanStatus @default(DRAFT)
+  targetKcal       Int?           @map("target_kcal")
+  calculatedTotals Json?          @map("calculated_totals")
+  generalNotes     String?        @map("general_notes")
+  clonedFromId     String?        @map("cloned_from_id")
+  createdAt        DateTime       @default(now()) @map("created_at")
+  updatedAt        DateTime       @updatedAt @map("updated_at")
+
+  meals Meal[]
+
+  @@index([clinicId, patientId, status])
+  @@map("meal_plans")
+}
+
+model Meal {
+  id         String   @id @default(uuid())
+  mealPlanId String   @map("meal_plan_id")
+  mealPlan   MealPlan @relation(fields: [mealPlanId], references: [id], onDelete: Cascade)
+  name       String
+  scheduledTime String? @map("scheduled_time")
+  sortOrder  Int      @default(0) @map("sort_order")
+  notes      String?
+
+  items MealItem[]
+
+  @@map("meals")
+}
+
+model MealItem {
+  id              String   @id @default(uuid())
+  mealId          String   @map("meal_id")
+  meal            Meal     @relation(fields: [mealId], references: [id], onDelete: Cascade)
+  foodItemId      String?  @map("food_item_id")
+  foodItem        FoodItem? @relation(fields: [foodItemId], references: [id])
+  customLabel     String?  @map("custom_label")
+  measureLabel    String   @map("measure_label")
+  quantity        Decimal  @db.Decimal(8, 2)
+  grams           Decimal  @db.Decimal(8, 2)
+  nutrientsSnapshot Json   @map("nutrients_snapshot")
+  sortOrder       Int      @default(0) @map("sort_order")
+
+  substitutions MealSubstitution[]
+
+  @@map("meal_items")
+}
+
+model MealSubstitution {
+  id                 String    @id @default(uuid())
+  mealItemId         String    @map("meal_item_id")
+  mealItem           MealItem  @relation(fields: [mealItemId], references: [id], onDelete: Cascade)
+  substituteFoodItemId String? @map("substitute_food_item_id")
+  substituteFoodItem FoodItem? @relation(fields: [substituteFoodItemId], references: [id])
+  measureLabel       String    @map("measure_label")
+  quantity           Decimal   @db.Decimal(8, 2)
+  grams              Decimal   @db.Decimal(8, 2)
+  notes              String?
+
+  @@map("meal_substitutions")
+}
+
+model NutritionEvolution {
+  id                  String                    @id @default(uuid())
+  clinicId            String                    @map("clinic_id")
+  clinic              Clinic                    @relation(fields: [clinicId], references: [id])
+  patientId           String                    @map("patient_id")
+  patient             Patient                   @relation(fields: [patientId], references: [id])
+  professionalId      String                    @map("professional_id")
+  professional        User                      @relation(fields: [professionalId], references: [id])
+  format              NutritionEvolutionFormat  @default(ADIME)
+  assessment          String?
+  nutritionDiagnosis  String?                   @map("nutrition_diagnosis")
+  intervention        String?
+  monitoringEvaluation String?                  @map("monitoring_evaluation")
+  createdAt           DateTime                  @default(now()) @map("created_at")
+  updatedAt           DateTime                  @updatedAt @map("updated_at")
+
+  @@index([clinicId, patientId, createdAt])
+  @@map("nutrition_evolutions")
+}
+
+model PatientGoal {
+  id             String   @id @default(uuid())
+  clinicId       String   @map("clinic_id")
+  clinic         Clinic   @relation(fields: [clinicId], references: [id])
+  patientId      String   @map("patient_id")
+  patient        Patient  @relation(fields: [patientId], references: [id])
+  professionalId String   @map("professional_id")
+  professional   User     @relation(fields: [professionalId], references: [id])
+  title          String
+  metricType     String   @map("metric_type")
+  targetValue    String?  @map("target_value")
+  currentValue   String?  @map("current_value")
+  dueDate        DateTime? @map("due_date") @db.Date
+  status         String   @default("OPEN")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@index([clinicId, patientId, status])
+  @@map("patient_goals")
 }

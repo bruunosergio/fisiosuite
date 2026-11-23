@@ -11,6 +11,8 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import {
+  ArrayNotEmpty,
+  IsArray,
   IsBoolean,
   IsEmail,
   IsEnum,
@@ -20,7 +22,7 @@ import {
   MinLength,
 } from 'class-validator';
 import { AUTH_USE_CASE, type AuthUseCase } from '../../../domain/ports/input';
-import { Role } from '../../../domain/entities';
+import { CouncilType, Role, Specialty } from '../../../domain/entities';
 import { httpStatusFor } from '../failure-http.mapper';
 import { AuthenticatedRequest, JwtAuthGuard } from '../../guards/jwt-auth.guard';
 
@@ -52,6 +54,12 @@ class RegisterClinicDto {
   @IsOptional()
   @IsString()
   phone?: string;
+
+  @IsOptional()
+  @IsArray()
+  @ArrayNotEmpty()
+  @IsEnum(Specialty, { each: true })
+  enabledModules?: Specialty[];
 }
 
 class CreateUserDto {
@@ -72,6 +80,22 @@ class CreateUserDto {
   @IsOptional()
   @IsNumber()
   commissionPct?: number;
+
+  @IsOptional()
+  @IsEnum(Specialty)
+  specialty?: Specialty;
+
+  @IsOptional()
+  @IsEnum(CouncilType)
+  councilType?: CouncilType;
+
+  @IsOptional()
+  @IsString()
+  councilNumber?: string;
+
+  @IsOptional()
+  @IsString()
+  councilState?: string;
 }
 
 class UpdateUserDto {
@@ -88,6 +112,22 @@ class UpdateUserDto {
   @IsOptional()
   @IsNumber()
   commissionPct?: number | null;
+
+  @IsOptional()
+  @IsEnum(Specialty)
+  specialty?: Specialty | null;
+
+  @IsOptional()
+  @IsEnum(CouncilType)
+  councilType?: CouncilType | null;
+
+  @IsOptional()
+  @IsString()
+  councilNumber?: string | null;
+
+  @IsOptional()
+  @IsString()
+  councilState?: string | null;
 
   @IsOptional()
   @IsBoolean()
@@ -158,6 +198,10 @@ export class AuthController {
       email: body.email,
       role: body.role,
       commissionPct: body.commissionPct,
+      specialty: body.specialty,
+      councilType: body.councilType,
+      councilNumber: body.councilNumber,
+      councilState: body.councilState,
       active: body.active,
       password: body.password,
     });

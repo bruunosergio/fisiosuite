@@ -25,6 +25,9 @@ export class PatientUseCaseImpl implements PatientUseCase {
       email: cmd.email ?? null,
       cpf: cmd.cpf ?? null,
       birthDate: cmd.birthDate ?? null,
+      biologicalSex: cmd.biologicalSex ?? null,
+      allergiesSummary: cmd.allergiesSummary ?? null,
+      dietaryRestrictions: cmd.dietaryRestrictions ?? null,
       notes: cmd.notes ?? null,
       active: true,
       createdAt: now,
@@ -49,6 +52,14 @@ export class PatientUseCaseImpl implements PatientUseCase {
       email: cmd.email !== undefined ? cmd.email : existing.email,
       cpf: cmd.cpf !== undefined ? cmd.cpf : existing.cpf,
       birthDate: cmd.birthDate === undefined ? existing.birthDate : cmd.birthDate,
+      biologicalSex:
+        cmd.biologicalSex !== undefined ? cmd.biologicalSex : existing.biologicalSex,
+      allergiesSummary:
+        cmd.allergiesSummary !== undefined ? cmd.allergiesSummary : existing.allergiesSummary,
+      dietaryRestrictions:
+        cmd.dietaryRestrictions !== undefined
+          ? cmd.dietaryRestrictions
+          : existing.dietaryRestrictions,
       notes: cmd.notes !== undefined ? cmd.notes : existing.notes,
       active: cmd.active !== undefined ? cmd.active : existing.active,
       updatedAt: new Date(),

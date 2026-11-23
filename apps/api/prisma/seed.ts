@@ -1,14 +1,15 @@
-import { PrismaClient, Role } from '@prisma/client';
+import { CouncilType, PrismaClient, Role, Specialty } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import { randomUUID } from 'crypto';
+import { seedFoods } from './seed-foods';
 
 const prisma = new PrismaClient();
 
-async function main() {
+async function seedFisioDemo() {
   const email = 'admin@fisiosuite.demo';
   const existing = await prisma.user.findFirst({ where: { email } });
   if (existing) {
-    console.log('Seed já aplicado (admin@fisiosuite.demo existe).');
+    console.log('Seed fisio já aplicado (admin@fisiosuite.demo existe).');
     return;
   }
 
@@ -31,6 +32,7 @@ async function main() {
       unjustifiedDebitsPackage: true,
       commissionOnNoShow: false,
       commissionOnMakeup: false,
+      enabledModules: [Specialty.FISIOTERAPIA],
     },
   });
 
@@ -54,6 +56,7 @@ async function main() {
         passwordHash: await bcrypt.hash('Fisio@123', 10),
         role: Role.PROFESSIONAL,
         commissionPct: 40,
+        specialty: Specialty.FISIOTERAPIA,
       },
     ],
   });
@@ -137,9 +140,69 @@ async function main() {
   }
   await prisma.appointment.createMany({ data: appointments });
 
-  console.log('Seed OK');
+  console.log('Seed fisio OK');
   console.log('  Login: admin@fisiosuite.demo / Admin@123');
   console.log('  Fisio: paula@fisiosuite.demo / Fisio@123');
+}
+
+async function seedNutriDemo() {
+  const email = 'nutri@fisiosuite.demo';
+  const existing = await prisma.user.findFirst({ where: { email } });
+  if (existing) {
+    console.log('Seed nutri já aplicado (nutri@fisiosuite.demo existe).');
+    return;
+  }
+
+  const clinicId = randomUUID();
+  await prisma.clinic.create({
+    data: {
+      id: clinicId,
+      name: 'NutriSuite Demo',
+      phone: '11977776666',
+      absenceNoticeHours: 24,
+      justifiedDebitsPackage: false,
+      unjustifiedDebitsPackage: true,
+      commissionOnNoShow: false,
+      commissionOnMakeup: false,
+      enabledModules: [Specialty.NUTRICAO],
+    },
+  });
+
+  await prisma.user.create({
+    data: {
+      id: randomUUID(),
+      clinicId,
+      name: 'Nina Nutricionista',
+      email,
+      passwordHash: await bcrypt.hash('Nutri@123', 10),
+      role: Role.ADMIN,
+      specialty: Specialty.NUTRICAO,
+      councilType: CouncilType.CRN,
+      councilNumber: '12345',
+      councilState: 'SP',
+    },
+  });
+
+  await prisma.patient.create({
+    data: {
+      id: randomUUID(),
+      clinicId,
+      name: 'Maria Paciente',
+      phone: '11966665555',
+      whatsapp: '11966665555',
+      birthDate: new Date('1990-05-10'),
+      biologicalSex: 'FEMALE',
+    },
+  });
+
+  console.log('Seed nutri OK');
+  console.log('  Login: nutri@fisiosuite.demo / Nutri@123 (clínica NutriSuite Demo, módulo NUTRICAO)');
+}
+
+async function main() {
+  await seedFisioDemo();
+  await seedNutriDemo();
+  await seedFoods(prisma);
 }
 
 main()

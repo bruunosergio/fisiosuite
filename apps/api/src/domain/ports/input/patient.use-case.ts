@@ -1,6 +1,6 @@
 import type { Result } from '../../core/result';
 import type { Failure } from '../../failures';
-import type { Patient } from '../../entities';
+import type { BiologicalSex, Patient } from '../../entities';
 
 export type UpsertPatientCommand = {
   clinicId: string;
@@ -11,6 +11,9 @@ export type UpsertPatientCommand = {
   email?: string | null;
   cpf?: string | null;
   birthDate?: Date | null;
+  biologicalSex?: BiologicalSex | null;
+  allergiesSummary?: string | null;
+  dietaryRestrictions?: string | null;
   notes?: string | null;
   active?: boolean;
 };

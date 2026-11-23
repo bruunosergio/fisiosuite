@@ -9,3 +9,5 @@ export * from './clinical.repository';
 export * from './payment.repository';
 export * from './security.ports';
 export * from './whatsapp.gateway';
+export * from './plantao.repository';
+export * from './nutrition.repository';

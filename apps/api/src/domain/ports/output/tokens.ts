@@ -10,3 +10,5 @@ export const PASSWORD_HASHER = Symbol('PASSWORD_HASHER');
 export const TOKEN_PROVIDER = Symbol('TOKEN_PROVIDER');
 export const WHATSAPP_GATEWAY = Symbol('WHATSAPP_GATEWAY');
 export const ID_GENERATOR = Symbol('ID_GENERATOR');
+export const PLANTAO_REPOSITORY = Symbol('PLANTAO_REPOSITORY');
+export const NUTRITION_REPOSITORY = Symbol('NUTRITION_REPOSITORY');

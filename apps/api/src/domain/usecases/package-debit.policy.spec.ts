@@ -1,4 +1,4 @@
-import { AbsenceKind, AppointmentStatus } from '../entities';
+import { AbsenceKind, AppointmentStatus, Specialty } from '../entities';
 import { shouldDebitPackage, isJustifiedByNotice } from '../services/package-debit.policy';
 import type { Clinic } from '../entities';
 
@@ -13,6 +13,7 @@ const baseClinic: Clinic = {
   unjustifiedDebitsPackage: true,
   commissionOnNoShow: false,
   commissionOnMakeup: false,
+  enabledModules: [Specialty.FISIOTERAPIA],
   active: true,
   createdAt: new Date(),
   updatedAt: new Date(),

@@ -9,6 +9,8 @@ import { AppointmentsController } from '../../api/rest/appointments/appointments
 import { ClinicalController } from '../../api/rest/clinical/clinical.controller';
 import { FinanceController } from '../../api/rest/finance/finance.controller';
 import { PlatformController } from '../../api/rest/platform/platform.controller';
+import { PlantaoController } from '../../api/rest/plantao/plantao.controller';
+import { NutritionController } from '../../api/rest/nutrition/nutrition.controller';
 import { JwtAuthGuard } from '../../api/guards/jwt-auth.guard';
 import { PlatformAuthGuard } from '../../api/guards/platform-auth.guard';
 import { HealthController } from '../../api/rest/health.controller';
@@ -25,6 +27,8 @@ import { HealthController } from '../../api/rest/health.controller';
     ClinicalController,
     FinanceController,
     PlatformController,
+    PlantaoController,
+    NutritionController,
   ],
   providers: [JwtAuthGuard, PlatformAuthGuard],
 })

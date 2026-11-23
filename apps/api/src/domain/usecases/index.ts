@@ -6,3 +6,5 @@ export * from './appointment.use-case.impl';
 export * from './clinical.use-case.impl';
 export * from './finance.use-case.impl';
 export * from './platform.use-case.impl';
+export * from './plantao.use-case.impl';
+export * from './nutrition.use-case.impl';

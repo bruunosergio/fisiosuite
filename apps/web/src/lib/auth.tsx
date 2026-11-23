@@ -1,4 +1,4 @@
-import {
+﻿import {
   createContext,
   useCallback,
   useContext,
@@ -10,6 +10,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import {
+  ENABLED_MODULES_STORAGE_KEY,
   TOKEN_STORAGE_KEY,
   USER_STORAGE_KEY,
   clearStoredSession,
@@ -17,7 +18,25 @@ import {
   resetUnauthorizedHandling,
 } from './api';
 import { loginRequest, registerClinicRequest } from './queries';
-import type { User } from './types';
+import type { Specialty, User } from './types';
+
+const DEFAULT_MODULES: Specialty[] = ['FISIOTERAPIA'];
+const VALID_MODULES: Specialty[] = ['FISIOTERAPIA', 'NUTRICAO'];
+
+function normalizeModules(value: unknown): Specialty[] {
+  if (!Array.isArray(value)) return DEFAULT_MODULES;
+  const modules = value.filter((m): m is Specialty => VALID_MODULES.includes(m as Specialty));
+  return modules.length ? modules : DEFAULT_MODULES;
+}
+
+function readStoredModules(): Specialty[] {
+  try {
+    const raw = localStorage.getItem(ENABLED_MODULES_STORAGE_KEY);
+    return raw ? normalizeModules(JSON.parse(raw)) : DEFAULT_MODULES;
+  } catch {
+    return DEFAULT_MODULES;
+  }
+}
 
 type LoginPayload = { email: string; password: string };
 
@@ -27,10 +46,12 @@ type RegisterClinicPayload = {
   adminEmail: string;
   adminPassword: string;
   phone?: string;
+  enabledModules?: Specialty[];
 };
 
 type AuthContextValue = {
   user: User | null;
+  enabledModules: Specialty[];
   token: string | null;
   initializing: boolean;
   login: (payload: LoginPayload) => Promise<void>;
@@ -45,12 +66,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
+  const [enabledModules, setEnabledModules] = useState<Specialty[]>(DEFAULT_MODULES);
   const [initializing, setInitializing] = useState(true);
 
   const endSession = useCallback(() => {
     clearStoredSession();
     setToken(null);
     setUser(null);
+    setEnabledModules(DEFAULT_MODULES);
     queryClient.clear();
   }, [queryClient]);
 
@@ -61,6 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         setUser(JSON.parse(storedUser) as User);
         setToken(storedToken);
+        setEnabledModules(readStoredModules());
       } catch {
         clearStoredSession();
       }
@@ -76,26 +100,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => registerUnauthorizedHandler(null);
   }, [endSession, navigate]);
 
-  const persistSession = useCallback((accessToken: string, nextUser: User) => {
+  const persistSession = useCallback((accessToken: string, nextUser: User, modules?: unknown) => {
+    const nextModules = normalizeModules(modules);
     localStorage.setItem(TOKEN_STORAGE_KEY, accessToken);
     localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(nextUser));
+    localStorage.setItem(ENABLED_MODULES_STORAGE_KEY, JSON.stringify(nextModules));
     setToken(accessToken);
     setUser(nextUser);
+    setEnabledModules(nextModules);
     resetUnauthorizedHandling();
   }, []);
 
   const login = useCallback(
     async (payload: LoginPayload) => {
-      const { accessToken, user: loggedUser } = await loginRequest(payload);
-      persistSession(accessToken, loggedUser);
+      const { accessToken, user: loggedUser, enabledModules: modules } = await loginRequest(payload);
+      persistSession(accessToken, loggedUser, modules);
     },
     [persistSession],
   );
 
   const registerClinic = useCallback(
     async (payload: RegisterClinicPayload) => {
-      const { accessToken, user: createdUser } = await registerClinicRequest(payload);
-      persistSession(accessToken, createdUser);
+      const {
+        accessToken,
+        user: createdUser,
+        enabledModules: modules,
+      } = await registerClinicRequest(payload);
+      persistSession(accessToken, createdUser, modules);
     },
     [persistSession],
   );
@@ -105,8 +136,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [endSession]);
 
   const value = useMemo<AuthContextValue>(
-    () => ({ user, token, initializing, login, registerClinic, logout }),
-    [user, token, initializing, login, registerClinic, logout],
+    () => ({ user, enabledModules, token, initializing, login, registerClinic, logout }),
+    [user, enabledModules, token, initializing, login, registerClinic, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

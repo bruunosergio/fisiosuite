@@ -6,3 +6,5 @@ export * from './prisma-package.repository';
 export * from './prisma-appointment.repository';
 export * from './prisma-clinical.repository';
 export * from './prisma-payment.repository';
+export * from './prisma-plantao.repository';
+export * from './prisma-nutrition.repository';

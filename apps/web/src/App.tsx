@@ -12,6 +12,9 @@ import PackagesPage from './pages/PackagesPage';
 import ClinicalPage from './pages/ClinicalPage';
 import FinancePage from './pages/FinancePage';
 import TeamPage from './pages/TeamPage';
+import PlantaoPage from './pages/PlantaoPage';
+import NutritionPage from './pages/nutrition/NutritionPage';
+import type { Specialty } from './lib/types';
 import PlatformLoginPage from './pages/platform/PlatformLoginPage';
 import PlatformLayout from './pages/platform/PlatformLayout';
 import PlatformOverviewPage from './pages/platform/PlatformOverviewPage';
@@ -35,6 +38,12 @@ function ProtectedLayout() {
   }
 
   return <Layout />;
+}
+
+function ModuleRoute({ module, children }: { module: Specialty; children: ReactElement }) {
+  const { enabledModules } = useAuth();
+  if (!enabledModules.includes(module)) return <Navigate to="/" replace />;
+  return children;
 }
 
 function PublicOnlyRoute({ children }: { children: ReactElement }) {
@@ -114,6 +123,22 @@ export default function App() {
         <Route path="/pacotes" element={<PackagesPage />} />
         <Route path="/prontuario" element={<ClinicalPage />} />
         <Route path="/financeiro" element={<FinancePage />} />
+        <Route
+          path="/plantao"
+          element={
+            <ModuleRoute module="FISIOTERAPIA">
+              <PlantaoPage />
+            </ModuleRoute>
+          }
+        />
+        <Route
+          path="/nutricao"
+          element={
+            <ModuleRoute module="NUTRICAO">
+              <NutritionPage />
+            </ModuleRoute>
+          }
+        />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />
